@@ -10,12 +10,33 @@
 #include <boost/program_options.hpp>
 #pragma GCC diagnostic pop
 
-#include <chrono>
-#include <thread>
+#include <windows.h>
 
 using namespace std;
 using namespace leatherman::logging;
 namespace po = boost::program_options;
+
+static HANDLE halt_event;
+
+BOOL ctrl_handler(DWORD fdwCtrlType)
+{
+    switch (fdwCtrlType) {
+        case CTRL_C_EVENT:
+            LOG_DEBUG("Received Ctrl-C, shutting down");
+            SetEvent(halt_event);
+            return TRUE;
+        case CTRL_CLOSE_EVENT:
+            LOG_DEBUG("Received close event, shutting down");
+            SetEvent(halt_event);
+            return TRUE;
+        case CTRL_SHUTDOWN_EVENT:
+            LOG_DEBUG("Received shutdown event, shutting down");
+            SetEvent(halt_event);
+            return TRUE;
+        default:
+            return FALSE;
+    }
+}
 
 void help(po::options_description& desc)
 {
@@ -86,10 +107,26 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    while (true) {
-        boost::nowide::cout << "Hello!" << endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    halt_event = CreateEvent(nullptr, TRUE, FALSE, nullptr);
+    if (SetConsoleCtrlHandler(static_cast<PHANDLER_ROUTINE>(ctrl_handler), TRUE)) {
+        LOG_DEBUG("Control handler installed");
+    } else {
+        LOG_ERROR("Could not set control handler");
+        return EXIT_FAILURE;
     }
+
+    boost::nowide::cout << "Service starting up" << endl;
+
+    DWORD wait_status;
+    while((wait_status = WaitForSingleObject(halt_event, 1000)) == WAIT_TIMEOUT) {
+        boost::nowide::cout << "Hello!" << endl;
+    }
+    if (wait_status != WAIT_OBJECT_0) {
+        LOG_ERROR("Wait failed with error %1%", wait_status);
+        return EXIT_FAILURE;
+    }
+
+    boost::nowide::cout << "Service shutting down" << endl;
 
     return error_has_been_logged() ? EXIT_FAILURE : EXIT_SUCCESS;
 }
