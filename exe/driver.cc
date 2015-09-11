@@ -10,6 +10,9 @@
 #include <boost/program_options.hpp>
 #pragma GCC diagnostic pop
 
+#include <chrono>
+#include <thread>
+
 using namespace std;
 using namespace leatherman::logging;
 namespace po = boost::program_options;
@@ -83,7 +86,10 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    boost::nowide::cout << "Hello!" << endl;
+    while (true) {
+        boost::nowide::cout << "Hello!" << endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    }
 
     return error_has_been_logged() ? EXIT_FAILURE : EXIT_SUCCESS;
 }

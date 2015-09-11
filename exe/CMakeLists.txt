@@ -8,7 +8,7 @@ include_directories(
 )
 
 add_executable(driver driver.cc)
-target_link_libraries(driver libcpp_project_template ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LEATHERMAN_LIBRARIES})
+target_link_libraries(driver libcpp_project_template ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_THREAD_LIBRARY} ${LEATHERMAN_LIBRARIES})
 install(TARGETS driver DESTINATION bin)
 
 add_test(NAME "smoke_test" COMMAND driver)
